@@ -57,3 +57,5 @@ class DataThread(WebSocketApi):
     def thread_start(self):
         cpu_thread = threading.Thread(target=self._data_thread)
         cpu_thread.start()
+
+

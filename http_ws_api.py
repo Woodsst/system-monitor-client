@@ -13,9 +13,9 @@ class BaseHttpApi:
         url = self.base_url + path
         return requests.get(url, params=params)
 
-    def post(self, path, data=None, json=None) -> Response:
+    def post(self, path, data=None, json=None, **kwargs) -> Response:
         url = self.base_url + path
-        return requests.post(url, data=data, json=json)
+        return requests.post(url, data=data, json=json, **kwargs)
 
     def patch(self, path, data=None) -> Response:
         url = self.base_url + path
