@@ -1,15 +1,13 @@
+import logging
 import threading
 import json
 import enum
-import time
 
-from http_ws_api import WebSocketApi, BaseHttpApi
+from http_ws_api import WebSocketApi
 from cpu_monitor import cpu_load
 from memory_monitor import memory_info
 from datatype import DataType
 from storage_monitor import storage_info
-
-request_id = 0
 
 
 class ThreadStatus(enum.Enum):
@@ -17,23 +15,22 @@ class ThreadStatus(enum.Enum):
     THREAD_OFF = 'THREAD OFF'
 
 
-class DataThread(WebSocketApi):
+class DataThreadWS(WebSocketApi):
 
-    def __init__(self, *, host: str, port: int, path: str,
-                 data_type: DataType,
+    def __init__(self, data_type: DataType, username: str, password: str,
                  interval: int, cpu: bool = None, mem: bool = None, storage: bool = None):
-        super().__init__(host=host, port=port, path=path)
-        self.thread_status = ThreadStatus.THREAD_ON
+        super().__init__(host='localhost', port=5000, path="/echo")
+        self.thread_status = ThreadStatus.THREAD_OFF
         self.data_type = data_type
-        self.ws.send(json.dumps({"type": "HELLO"}))
+        self.username = username
+        self.password = password
         self.interval = interval
-        global request_id
-        self.request_id = request_id
-        request_id += 1
         self.cpu = cpu
         self.mem = mem
         self.storage = storage
         self.data_container = {}
+        self.registration()
+        self.client_id = self.client_id_parce()
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
@@ -47,9 +44,9 @@ class DataThread(WebSocketApi):
                 self.thread_status = ThreadStatus.THREAD_OFF
             self.ws.send(json.dumps({"type": "CLIENT_DATA",
                                      "data": self.data_container,
-                                     "interval": self.interval
+                                     "interval": self.interval,
+                                     "client_id": self.client_id
                                      }, indent=4))
-            print(self.ws.recv())
 
     def close_thread(self):
         self.thread_status = ThreadStatus.THREAD_OFF
@@ -58,4 +55,21 @@ class DataThread(WebSocketApi):
         cpu_thread = threading.Thread(target=self._data_thread)
         cpu_thread.start()
 
+    def client_id_parce(self) -> str:
+        recv = json.loads(self.ws.recv())
+        recv = recv.get('payload').get('client_id')
+        self.thread_status = ThreadStatus.THREAD_ON
+        return recv
+
+    def error(self, recv):
+        recv = json.loads(recv)
+        if recv.get('Error'):
+            self.thread_status = ThreadStatus.THREAD_OFF
+            return logging.warning(recv.get('reason'))
+
+    def registration(self):
+        self.ws.send(json.dumps({"type": "HELLO"}))
+        self.ws.recv()
+        self.ws.send(
+            json.dumps({"type": "REGISTRATION_CLIENT", "username": self.username, "password": self.password}))
 
