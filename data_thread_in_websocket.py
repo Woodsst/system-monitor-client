@@ -36,12 +36,10 @@ class DataThreadWS(WebSocketApi):
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
             if self.cpu is True:
-                self.data_container['cpu_load'] = cpu_load(self.interval)
+                self.data_container['cpu_load'] = cpu_load(0)
             if self.mem is True:
-                time.sleep(self.interval)
                 self.data_container['mem'] = memory_info(self.data_type)['used']
             if self.storage is True:
-                time.sleep(self.interval)
                 self.data_container['storage'] = storage_info(self.data_type)['used']
             elif len(self.data_container) == 0:
                 self.thread_status = ThreadStatus.THREAD_OFF
@@ -50,6 +48,7 @@ class DataThreadWS(WebSocketApi):
                                      "interval": self.interval,
                                      "client_id": self.client_id
                                      }, indent=4))
+            time.sleep(self.interval)
             logging.info(self.ws.recv())
 
     def close_thread(self):

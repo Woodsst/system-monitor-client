@@ -41,19 +41,17 @@ class DataThread(BaseHttpApi):
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
-            data = None
+            data = {}
             if self.cpu:
-                data = {'cpu_load': cpu_load(self.interval)}
+                data['cpu_load'] = cpu_load(0)
             if self.mem:
-                time.sleep(self.interval)
-                data = {'mem': memory_info(self.data_type)['used']}
+                data['mem'] = memory_info(self.data_type)['used']
             if self.storage:
-                time.sleep(self.interval)
-                data = {'storage': storage_info(self.data_type)['used']}
-
+                data['storage'] = storage_info(self.data_type)['used']
             response = self.post(f'/client/{self.client_id()}', data=data,
                                  headers=self.header())
             logging.info(response.text)
+            time.sleep(self.interval)
             if response.status_code != 202:
                 self.thread_status = ThreadStatus.THREAD_OFF
                 logging.warning(f'{response.status_code}')
@@ -90,28 +88,10 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--interval', type=int, help='reception data interval', default=1)
     args = parser.parse_args()
     if args.http:
-        if args.cpu:
-            cpu = DataThread(data_type=DataType.Megabyte, interval=args.interval, cpu=True, username=args.user,
-                             password=args.password)
-            cpu.thread_start()
-        if args.memory:
-            mem = DataThread(data_type=DataType.Megabyte, interval=args.interval, mem=True, username=args.user,
-                             password=args.password)
-            mem.thread_start()
-        if args.storage:
-            storage = DataThread(data_type=DataType.Megabyte, interval=args.interval, storage=True, username=args.user,
-                             password=args.password)
-            storage.thread_start()
+        thread = DataThread(data_type=DataType.Megabyte, interval=args.interval, cpu=args.cpu, mem=args.memory,
+                            storage=args.storage, username=args.user, password=args.password)
+        thread.thread_start()
     if args.websocket:
-        if args.cpu:
-            cpu = DataThreadWS(data_type=DataType.Megabyte, interval=args.interval, cpu=True, username=args.user,
-                               password=args.password)
-            cpu.thread_start()
-        if args.memory:
-            mem = DataThreadWS(data_type=DataType.Megabyte, interval=args.interval, mem=True, username=args.user,
-                               password=args.password)
-            mem.thread_start()
-        if args.storage:
-            storage = DataThreadWS(data_type=DataType.Megabyte, interval=args.interval, storage=True,
-                                   username=args.user, password=args.password)
-            storage.thread_start()
+        websocket_thread = DataThreadWS(data_type=DataType.Megabyte, interval=args.interval, cpu=args.cpu, mem=args.memory,
+                                        storage=args.storage, username=args.user, password=args.password)
+        websocket_thread.thread_start()
