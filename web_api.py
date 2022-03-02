@@ -92,6 +92,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         self.password = password
         self.registration = self.post('/client', json={'username': username, 'pass': password})
         logging.info(f'{self.username} registration')
+        self.client_id = self.client_id_parse()
         if self.registration.json().get('Error'):
             self.thread_status = ThreadStatus.THREAD_OFF
             logging.warning(f'{username} incorrect username or pass')
@@ -107,7 +108,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
                 data['mem'] = memory_info(self.data_type)['used']
             if self.storage:
                 data['storage'] = storage_info(self.data_type)['used']
-            response = self.post(f'/client/{self.client_id()}', data=data,
+            response = self.post(f'/client/{self.client_id}', data=data,
                                  headers=self.header())
             logging.info(response.text)
             time.sleep(self.interval)
@@ -124,7 +125,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         cpu_thread = threading.Thread(target=self._data_thread)
         cpu_thread.start()
 
-    def client_id(self):
+    def client_id_parse(self):
         return self.registration.json().get('client_id')
 
     def time_work_write_log(self):
