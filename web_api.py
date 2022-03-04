@@ -156,12 +156,13 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         self.cpu = cpu
         self.mem = mem
         self.storage = storage
-        self.data_container = {}
         self.registration()
         self.client_id = self.client_id_parce()
+        self.http_request = BaseHttpApi(host=self.host, port=self.port)
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
+            self.data_container = {"time": int(time.time())}
             if self.cpu is True:
                 self.data_container['cpu_load'] = cpu_load(0)
             if self.mem is True:
@@ -203,3 +204,11 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         self.ws.recv()
         self.ws.send(
             json.dumps({"type": "REGISTRATION_CLIENT", "username": self.username, "password": self.password}))
+
+    def time_work_write_log(self):
+        response = self.http_request.get(f'/client/{self.client_id}/time')
+        return response.json()
+
+    def log_slice(self, start: int, end: int):
+        response = self.http_request.get(f'/client/{self.client_id}/time/report?start={start}&end={end}')
+        return response.json()
