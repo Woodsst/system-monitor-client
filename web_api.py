@@ -1,4 +1,3 @@
-import base64
 import enum
 import json
 import logging
@@ -79,7 +78,7 @@ class WebSocketApi:
 
 class DataThreadHttp(BaseHttpApi, DataCollector):
 
-    def __init__(self, data_type: DataType, interval: int, username: str, password: str, mem: bool = None,
+    def __init__(self, data_type: DataType, interval: int, client_id: str, mem: bool = None,
                  cpu: bool = None, storage: bool = None):
         super().__init__(host='localhost', port=5000)
         self.thread_status = ThreadStatus.THREAD_OFF
@@ -88,14 +87,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         self.cpu = cpu
         self.mem = mem
         self.storage = storage
-        self.username = username
-        self.password = password
-        self.registration = self.post('/client', json={'username': username, 'pass': password})
-        logging.info(f'{self.username} registration')
-        self.client_id = self.client_id_parse()
-        if self.registration.json().get('Error'):
-            self.thread_status = ThreadStatus.THREAD_OFF
-            logging.warning(f'{username} incorrect username or pass')
+        self.client_id = client_id
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
@@ -125,9 +117,6 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         cpu_thread = threading.Thread(target=self._data_thread)
         cpu_thread.start()
 
-    def client_id_parse(self):
-        return self.registration.json().get('client_id')
-
     def time_work_write_log(self):
         response = self.get(f'/client/{self.client_id}/time')
         return response.json()
@@ -137,31 +126,28 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         return response.json()
 
     def header(self):
-        coding_username_pass = base64.b64encode(f'{self.username}:{self.password}'.encode())
         return {
-            'Authorization': f'Basic {coding_username_pass.decode()}'
+            'Authorization': f'Basic {self.client_id}'
         }
 
 
 class DataThreadWebSocket(WebSocketApi, DataCollector):
 
-    def __init__(self, data_type: DataType, username: str, password: str,
-                 interval: int, cpu: bool = None, mem: bool = None, storage: bool = None):
+    def __init__(self, data_type: DataType, interval: int, client_id, cpu: bool = None, mem: bool = None, storage: bool = None):
         super().__init__(host='localhost', port=5000, path="/echo")
         self.thread_status = ThreadStatus.THREAD_OFF
         self.data_type = data_type
-        self.username = username
-        self.password = password
+        self.client_id = client_id
         self.interval = interval
         self.cpu = cpu
         self.mem = mem
         self.storage = storage
-        self.registration()
-        self.client_id = self.client_id_parce()
         self.http_request = BaseHttpApi(host=self.host, port=self.port)
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
+            self.ws.send(json.dumps({"type": "HELLO"}))
+            self.ws.recv()
             self.data_container = {"time": int(time.time())}
             if self.cpu is True:
                 self.data_container['cpu_load'] = cpu_load(0)
@@ -187,23 +173,11 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         cpu_thread = threading.Thread(target=self._data_thread)
         cpu_thread.start()
 
-    def client_id_parce(self) -> str:
-        client_id = base64.b64encode(f'{self.username}:{self.password}'.encode())
-        client_id = client_id.decode()
-        self.thread_status = ThreadStatus.THREAD_ON
-        return client_id
-
     def error(self, recv):
         recv = json.loads(recv)
         if recv.get('Error'):
             self.thread_status = ThreadStatus.THREAD_OFF
             return logging.warning(recv.get('reason'))
-
-    def registration(self):
-        self.ws.send(json.dumps({"type": "HELLO"}))
-        self.ws.recv()
-        self.ws.send(
-            json.dumps({"type": "REGISTRATION_CLIENT", "username": self.username, "password": self.password}))
 
     def time_work_write_log(self):
         response = self.http_request.get(f'/client/{self.client_id}/time')
