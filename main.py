@@ -42,12 +42,12 @@ class Client:
 
     def create_log_slice(self):
         response = self.data_collector.log_slice(self.start_log.get(), self.end_log.get())
-        with open(f'data_slice_for_{self.data_collector.username}.csv', 'w') as file:
+        with open(f'log_slice.csv', 'w') as file:
             file.write(f'time;cpu;memory;storage\n')
             for string in response['payload']:
                 file.write(f'{string}\n')
         showinfo(title='Create file log slice',
-                 message=f'Data slice writtеn to data_slice_for_{self.data_collector.username}.csv')
+                 message=f'Data slice writtеn to log_slice.csv')
 
     def get_frame_constructing(self):
         username = f"Hello!"
