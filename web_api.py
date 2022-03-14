@@ -24,6 +24,14 @@ class DataCollector(ABC):
     def stop(self):
         raise NotImplementedError()
 
+    @abstractmethod
+    def time_work_write_log(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def log_slice(self, start, end):
+        raise NotImplementedError()
+
 
 class ThreadStatus(enum.Enum):
     THREAD_ON = 'THREAD ON'
@@ -172,12 +180,6 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         self.thread_status = ThreadStatus.THREAD_ON
         cpu_thread = threading.Thread(target=self._data_thread)
         cpu_thread.start()
-
-    def error(self, recv):
-        recv = json.loads(recv)
-        if recv.get('Error'):
-            self.thread_status = ThreadStatus.THREAD_OFF
-            return logging.warning(recv.get('reason'))
 
     def time_work_write_log(self):
         response = self.http_request.get(f'/client/{self.client_id}/time')
