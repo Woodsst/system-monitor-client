@@ -18,10 +18,10 @@ class GUI:
         self.data_collector = data_collector
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.get_frame_constructing()
-        self.start_log = tkinter.StringVar()
-        self.end_log = tkinter.StringVar()
-        ttk.Entry(self.frm, width=16, textvariable=self.start_log).grid(column=0, row=5)
-        ttk.Entry(self.frm, width=16, textvariable=self.end_log).grid(column=0, row=7)
+        self.start_log = ttk.Entry(self.frm, width=16)
+        self.start_log.grid(column=0, row=5)
+        self.end_log = ttk.Entry(self.frm, width=16)
+        self.end_log.grid(column=0, row=7)
 
     def run_time(self):
         response = self.data_collector.time_work_write_log()
