@@ -1,5 +1,5 @@
 import tkinter
-import time
+import datetime
 from tkinter import Tk, ttk
 from tkinter.messagebox import showinfo
 
@@ -20,8 +20,8 @@ class Client:
         self.start_log.grid(column=0, row=5)
         self.end_log = ttk.Entry(self.frm, width=16)
         self.end_log.grid(column=1, row=5)
-        self.time_for_convert = ttk.Entry(self.frm, width=16)
-        self.time_for_convert.grid(column=1, row=7)
+        self.time_for_convert = ttk.Entry(self.frm, width=25)
+        self.time_for_convert.grid(column=0, row=7, columnspan=2)
         self.text_window = tkinter.Text(self.frm, width=33, height=2)
         self.text_window.grid(column=0, columnspan=2, row=6, pady=5)
 
@@ -31,7 +31,10 @@ class Client:
         self.text_window.insert('1.0', f'start = {response["start"]}\nend = {response["end"]}')
 
     def convert_time(self):
-        convert = time.ctime(int(self.time_for_convert.get()))
+        if len(self.time_for_convert.get()) < 11:
+            convert = datetime.datetime.fromtimestamp(int(self.time_for_convert.get()))
+        else:
+            convert = int(time_converter(self.time_for_convert.get()).timestamp())
         self.text_window.delete('1.0', 'end')
         self.text_window.insert('1.0', convert)
 
@@ -42,7 +45,7 @@ class Client:
         ttk.Button(self.frm, width=15, text="stop", command=self._stop).grid(column=1, row=1)
         ttk.Button(self.frm, width=15, text="create log slice", command=self.create_log_slice).grid(column=1, row=2)
         ttk.Button(self.frm, width=15, text='run time', command=self.show_time).grid(column=0, row=2)
-        ttk.Button(self.frm, width=15, text='convert', command=self.convert_time).grid(column=0, row=7, pady=5)
+        ttk.Button(self.frm, width=15, text='convert', command=self.convert_time).grid(column=0, row=9, pady=5, columnspan=2)
 
     def on_closing(self):
         self._stop()
@@ -172,3 +175,18 @@ class Settings:
         for value in DataType:
             if value.value == data:
                 return value
+
+
+def time_converter(str_time: str) -> datetime:
+    str_time = str_time.split(' ')
+    date_s = str_time[0].split('-')
+    year = int(date_s[0])
+    month = int(date_s[1])
+    day = int(date_s[2])
+    date_t = str_time[1].split(':')
+    hour = int(date_t[0])
+    minute = int(date_t[1])
+    sec = int(date_t[2])
+    return datetime.datetime(year=year, month=month, day=day,
+                             hour=hour, minute=minute, second=sec,
+                             microsecond=0)
