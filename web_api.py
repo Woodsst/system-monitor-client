@@ -96,6 +96,8 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         self.mem = mem
         self.storage = storage
         self.client_id = client_id
+        if self.data_type is None:
+            self.data_type = DataType.Megabyte
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
@@ -151,17 +153,19 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         self.mem = mem
         self.storage = storage
         self.http_request = BaseHttpApi(host=self.host, port=self.port)
+        if self.data_type is None:
+            self.data_type = DataType.Megabyte
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
             self.ws.send(json.dumps({"type": "HELLO"}))
             self.ws.recv()
             self.data_container = {"time": int(time.time())}
-            if self.cpu is True:
+            if self.cpu:
                 self.data_container['cpu_load'] = cpu_load(0)
-            if self.mem is True:
+            if self.mem:
                 self.data_container['mem'] = memory_info(self.data_type)['used']
-            if self.storage is True:
+            if self.storage:
                 self.data_container['storage'] = storage_info(self.data_type)['used']
             elif len(self.data_container) == 0:
                 self.thread_status = ThreadStatus.THREAD_OFF
