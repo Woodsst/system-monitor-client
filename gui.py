@@ -16,12 +16,12 @@ class Client:
         self.data_collector = data_collector
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.get_frame_constructing()
-        self.start_log = tkinter.StringVar()
-        self.end_log = tkinter.StringVar()
-        self.time_for_convert = tkinter.IntVar()
-        ttk.Entry(self.frm, width=16, textvariable=self.start_log).grid(column=0, row=5)
-        ttk.Entry(self.frm, width=16, textvariable=self.end_log).grid(column=1, row=5)
-        ttk.Entry(self.frm, width=16, textvariable=self.time_for_convert).grid(column=1, row=7)
+        self.start_log = ttk.Entry(self.frm, width=16)
+        self.start_log.grid(column=0, row=5)
+        self.end_log = ttk.Entry(self.frm, width=16)
+        self.end_log.grid(column=1, row=5)
+        self.time_for_convert = ttk.Entry(self.frm, width=16)
+        self.time_for_convert.grid(column=1, row=7)
         self.text_window = tkinter.Text(self.frm, width=33, height=2)
         self.text_window.grid(column=0, columnspan=2, row=6, pady=5)
 
@@ -31,8 +31,9 @@ class Client:
         self.text_window.insert('1.0', f'start = {response["start"]}\nend = {response["end"]}')
 
     def convert_time(self):
+        convert = time.ctime(int(self.time_for_convert.get()))
         self.text_window.delete('1.0', 'end')
-        self.text_window.insert('1.0', time.ctime(self.time_for_convert.get()))
+        self.text_window.insert('1.0', convert)
 
     def get_frame_constructing(self):
         ttk.Label(self.frm, text='start time').grid(column=0, row=4)
