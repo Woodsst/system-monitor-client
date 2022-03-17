@@ -3,6 +3,7 @@ import json
 import logging
 import threading
 import time
+from abc import ABC, abstractmethod
 
 import requests
 import websocket
@@ -12,7 +13,6 @@ from cpu_monitor import cpu_load
 from datatype import DataType
 from memory_monitor import memory_info
 from storage_monitor import storage_info
-from abc import ABC, abstractmethod
 
 
 class DataCollector(ABC):
@@ -97,7 +97,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         self.storage = storage
         self.client_id = client_id
         if self.data_type is None:
-            self.data_type = DataType.Megabyte
+            self.data_type = DataType.MEGABYTE
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
@@ -116,7 +116,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
             time.sleep(self.interval)
             if response.status_code != 202:
                 self.thread_status = ThreadStatus.THREAD_OFF
-                logging.warning(f'{response.status_code}')
+                logging.warning(response.status_code)
 
     def stop(self):
         self.thread_status = ThreadStatus.THREAD_OFF
@@ -143,7 +143,8 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
 
 class DataThreadWebSocket(WebSocketApi, DataCollector):
 
-    def __init__(self, data_type: DataType, interval: int, client_id, cpu: bool = None, mem: bool = None, storage: bool = None):
+    def __init__(self, data_type: DataType, interval: int, client_id, cpu: bool = None, mem: bool = None,
+                 storage: bool = None):
         super().__init__(host='localhost', port=5000, path="/echo")
         self.thread_status = ThreadStatus.THREAD_OFF
         self.data_type = data_type
@@ -154,23 +155,23 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         self.storage = storage
         self.http_request = BaseHttpApi(host=self.host, port=self.port)
         if self.data_type is None:
-            self.data_type = DataType.Megabyte
+            self.data_type = DataType.MEGABYTE
 
     def _data_thread(self):
         while self.thread_status == ThreadStatus.THREAD_ON:
             self.ws.send(json.dumps({"type": "HELLO"}))
             self.ws.recv()
-            self.data_container = {"time": int(time.time())}
+            data_container = {"time": int(time.time())}
             if self.cpu:
-                self.data_container['cpu_load'] = cpu_load(0)
+                data_container['cpu_load'] = cpu_load(0)
             if self.mem:
-                self.data_container['mem'] = memory_info(self.data_type)['used']
+                data_container['mem'] = memory_info(self.data_type)['used']
             if self.storage:
-                self.data_container['storage'] = storage_info(self.data_type)['used']
-            elif len(self.data_container) == 0:
+                data_container['storage'] = storage_info(self.data_type)['used']
+            elif len(data_container) == 0:
                 self.thread_status = ThreadStatus.THREAD_OFF
             self.ws.send(json.dumps({"type": "CLIENT_DATA",
-                                     "data": self.data_container,
+                                     "data": data_container,
                                      "interval": self.interval,
                                      "client_id": self.client_id
                                      }, indent=4))

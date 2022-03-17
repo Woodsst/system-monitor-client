@@ -2,19 +2,19 @@ import enum
 
 
 class DataType(enum.Enum):
-    Terabyte = 'TB'
-    Gigabyte = 'GB'
-    Megabyte = 'MB'
-    Kilobyte = 'KB'
-    Byte = 'B'
+    TERABYTE = 'TB'
+    GIGABYTE = 'GB'
+    MEGABYTE = 'MB'
+    KILOBYTE = 'KB'
+    BYTE = 'B'
 
 
 UNIT_SCALE = {
-        DataType.Terabyte: 1024 ** 4,
-        DataType.Gigabyte: 1024 ** 3,
-        DataType.Megabyte: 1024 ** 2,
-        DataType.Kilobyte: 1024,
-        DataType.Byte: 1,
+        DataType.TERABYTE: 1024 ** 4,
+        DataType.GIGABYTE: 1024 ** 3,
+        DataType.MEGABYTE: 1024 ** 2,
+        DataType.KILOBYTE: 1024,
+        DataType.BYTE: 1,
     }
 
 

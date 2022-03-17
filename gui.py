@@ -66,8 +66,8 @@ class Client:
 
     def create_log_slice(self):
         response = self.data_collector.log_slice(self.start_log.get(), self.end_log.get())
-        with open(f'log_slice.csv', 'w') as file:
-            file.write(f'time;cpu;memory;storage\n')
+        with open('log_slice.csv', 'w', encoding='utf-8') as file:
+            file.write('time;cpu;memory;storage\n')
             for string in response['payload']:
                 file.write(f'{string}\n')
         self.text_window.delete('1.0', 'end')
@@ -112,8 +112,6 @@ class Login:
 class Settings:
     def __init__(self, client_id):
         self.client_id = client_id
-        self.login = tkinter.StringVar
-        self.password = tkinter.StringVar
         self.root = Tk()
         self.root.wm_title("Settings")
         self.frame = ttk.Frame(self.root, padding=5)
@@ -145,12 +143,12 @@ class Settings:
 
     def start_client(self):
         if self.http.get() is True:
-            cl = Client(self.http_data_thread())
+            client = Client(self.http_data_thread())
         else:
-            cl = Client(self.web_socket_data_thread())
+            client = Client(self.web_socket_data_thread())
         showinfo(title='welcome', message='Welcome to system monitor client')
         self.root.destroy()
-        cl.run()
+        client.run()
 
     def http_data_thread(self):
         http_thread = DataThreadHttp(interval=self.interval.get(),
@@ -175,6 +173,7 @@ class Settings:
         for value in DataType:
             if value.value == data:
                 return value
+        return DataType.MEGABYTE
 
 
 def time_converter(str_time: str) -> datetime:
