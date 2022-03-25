@@ -1,0 +1,5 @@
+websocket==0.2.1
+websocket-client==1.2.3
+future~=0.18.2
+requests~=2.25.1
+psutil~=5.9.0
