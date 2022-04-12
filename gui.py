@@ -106,6 +106,9 @@ class Login:
             settings = Settings(response.json()['client_id'])
             settings.run()
         else:
+            if response.json().get('error') == 'unsupportable username':
+                showinfo(message='name must start with a letter')
+                return
             showinfo(message='incorrect user or pass', title='login')
 
 
