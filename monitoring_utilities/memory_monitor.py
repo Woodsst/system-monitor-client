@@ -2,7 +2,7 @@ import os
 
 import psutil
 
-from datatype import DataType, scaled_unit
+from monitoring_utilities.datatype import DataType, scaled_unit
 
 
 def memory_info(unit: DataType) -> dict:

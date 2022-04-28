@@ -3,7 +3,7 @@ import datetime
 from tkinter import Tk, ttk
 from tkinter.messagebox import showinfo
 
-from datatype import DataType
+from monitoring_utilities.datatype import DataType
 from web_api import DataCollector, BaseHttpApi, DataThreadHttp, DataThreadWebSocket
 
 
@@ -27,16 +27,14 @@ class Client:
 
     def show_time(self):
         response = self.data_collector.time_work_write_log()
-        self.text_window.delete('1.0', 'end')
-        self.text_window.insert('1.0', f'start = {response["start"]}\nend = {response["end"]}')
+        self.text_output(f'start = {response["start"]}\nend = {response["end"]}')
 
     def convert_time(self):
         if len(self.time_for_convert.get()) < 11:
             convert = datetime.datetime.fromtimestamp(int(self.time_for_convert.get()))
         else:
             convert = int(time_converter(self.time_for_convert.get()).timestamp())
-        self.text_window.delete('1.0', 'end')
-        self.text_window.insert('1.0', convert)
+        self.text_output(convert)
 
     def get_frame_constructing(self):
         ttk.Label(self.frm, text='start time').grid(column=0, row=4)
@@ -52,13 +50,11 @@ class Client:
         self.root.destroy()
 
     def _start(self):
-        self.text_window.delete('1.0', 'end')
-        self.text_window.insert('1.0', 'Start data thread')
+        self.text_output('Start data thread')
         self.data_collector.start()
 
     def _stop(self):
-        self.text_window.delete('1.0', 'end')
-        self.text_window.insert('1.0', 'Stop data thread')
+        self.text_output('Stop data thread')
         self.data_collector.stop()
 
     def run(self):
@@ -66,12 +62,19 @@ class Client:
 
     def create_log_slice(self):
         response = self.data_collector.log_slice(self.start_log.get(), self.end_log.get())
+        payload = response.get('payload')
+        if payload is None:
+            self.text_output('log slice bad request')
+            return
         with open('log_slice.csv', 'w', encoding='utf-8') as file:
             file.write('time;cpu;memory;storage\n')
-            for string in response['payload']:
+            for string in payload:
                 file.write(f'{string}\n')
+        self.text_output('Log slice file create')
+
+    def text_output(self, text: str) -> None:
         self.text_window.delete('1.0', 'end')
-        self.text_window.insert('1.0', 'Log slice file create')
+        self.text_window.insert('1.0', text)
 
 
 class Login:

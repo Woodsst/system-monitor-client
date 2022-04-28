@@ -1,6 +1,6 @@
 import psutil
 
-from datatype import DataType, scaled_unit
+from monitoring_utilities.datatype import DataType, scaled_unit
 
 
 def storage_info(unit: DataType) -> dict:

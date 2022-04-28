@@ -9,10 +9,10 @@ import requests
 import websocket
 from requests import Response
 
-from cpu_monitor import cpu_load
-from datatype import DataType
-from memory_monitor import memory_info
-from storage_monitor import storage_info
+from monitoring_utilities.cpu_monitor import cpu_load
+from monitoring_utilities.datatype import DataType
+from monitoring_utilities.memory_monitor import memory_info
+from monitoring_utilities.storage_monitor import storage_info
 
 
 class DataCollector(ABC):
