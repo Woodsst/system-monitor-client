@@ -67,7 +67,6 @@ class Client:
             self.text_output('log slice bad request')
             return
         with open('log_slice.csv', 'w', encoding='utf-8') as file:
-            file.write('time;cpu;memory;storage\n')
             for string in payload:
                 file.write(f'{string}\n')
         self.text_output('Log slice file create')
@@ -106,7 +105,7 @@ class Login:
         if response.json().get('client_id') is not None:
             showinfo(message=f'Hello: {self.username.get()}', title='login')
             self.root.destroy()
-            settings = Settings(response.json()['client_id'])
+            settings = Settings(response.json()['client_id'], self.username.get())
             settings.run()
         else:
             if response.json().get('error') == 'unsupportable username':
@@ -116,8 +115,9 @@ class Login:
 
 
 class Settings:
-    def __init__(self, client_id):
+    def __init__(self, client_id: str, username: str):
         self.client_id = client_id
+        self.username = username
         self.root = Tk()
         self.root.wm_title("Settings")
         self.frame = ttk.Frame(self.root, padding=5)
@@ -162,7 +162,8 @@ class Settings:
                                      storage=self.storage.get(),
                                      cpu=self.cpu.get(),
                                      data_type=self.data_type_choice(self.data_type.get()),
-                                     client_id=self.client_id)
+                                     client_id=self.client_id,
+                                     username=self.username)
         return http_thread
 
     def web_socket_data_thread(self):
@@ -171,7 +172,8 @@ class Settings:
                                         storage=self.storage.get(),
                                         cpu=self.cpu.get(),
                                         data_type=self.data_type_choice(self.data_type.get()),
-                                        client_id=self.client_id)
+                                        client_id=self.client_id,
+                                        username=self.username)
         return ws_thread
 
     @staticmethod

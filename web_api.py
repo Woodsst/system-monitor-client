@@ -32,6 +32,10 @@ class DataCollector(ABC):
     def log_slice(self, start, end):
         raise NotImplementedError()
 
+    @abstractmethod
+    def header(self):
+        raise NotImplementedError()
+
 
 class ThreadStatus(enum.Enum):
     THREAD_ON = 'THREAD ON'
@@ -86,7 +90,7 @@ class WebSocketApi:
 
 class DataThreadHttp(BaseHttpApi, DataCollector):
 
-    def __init__(self, data_type: DataType, interval: int, client_id: str, mem: bool = None,
+    def __init__(self, data_type: DataType, interval: int, client_id: str, username: str, mem: bool = None,
                  cpu: bool = None, storage: bool = None):
         super().__init__(host='localhost', port=5000)
         self.thread_status = ThreadStatus.THREAD_OFF
@@ -96,6 +100,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         self.mem = mem
         self.storage = storage
         self.client_id = client_id
+        self.username = username
         if self.data_type is None:
             self.data_type = DataType.MEGABYTE
 
@@ -110,7 +115,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
                 data['mem'] = memory_info(self.data_type)['used']
             if self.storage:
                 data['storage'] = storage_info(self.data_type)['used']
-            response = self.post(f'/client/{self.client_id}', data=data,
+            response = self.post(f'/client/{self.username}', data=data,
                                  headers=self.header())
             logging.info(response.text)
             time.sleep(self.interval)
@@ -128,22 +133,22 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         cpu_thread.start()
 
     def time_work_write_log(self):
-        response = self.get(f'/client/{self.client_id}/time')
+        response = self.post(f'/client/{self.username}/time', headers=self.header())
         return response.json()
 
     def log_slice(self, start: int, end: int):
-        response = self.get(f'/client/{self.client_id}/time/report?start={start}&end={end}')
+        response = self.post(f'/client/{self.username}/time/report?start={start}&end={end}', headers=self.header())
         return response.json()
 
     def header(self):
         return {
-            'Authorization': f'Basic {self.client_id}'
+            'Authorization': self.client_id
         }
 
 
 class DataThreadWebSocket(WebSocketApi, DataCollector):
 
-    def __init__(self, data_type: DataType, interval: int, client_id, cpu: bool = None, mem: bool = None,
+    def __init__(self, data_type: DataType, interval: int, client_id, username: str, cpu: bool = None, mem: bool = None,
                  storage: bool = None):
         super().__init__(host='localhost', port=5000, path="/echo")
         self.thread_status = ThreadStatus.THREAD_OFF
@@ -153,6 +158,7 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         self.cpu = cpu
         self.mem = mem
         self.storage = storage
+        self.username = username
         self.http_request = BaseHttpApi(host=self.host, port=self.port)
         if self.data_type is None:
             self.data_type = DataType.MEGABYTE
@@ -187,9 +193,15 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         cpu_thread.start()
 
     def time_work_write_log(self):
-        response = self.http_request.get(f'/client/{self.client_id}/time')
+        response = self.http_request.post(f'/client/{self.username}/time', headers=self.header())
         return response.json()
 
     def log_slice(self, start: int, end: int):
-        response = self.http_request.get(f'/client/{self.client_id}/time/report?start={start}&end={end}')
+        response = self.http_request.post(f'/client/{self.username}/time/report?start={start}&end={end}',
+                                          headers=self.header())
         return response.json()
+
+    def header(self):
+        return {
+            'Authorization': self.client_id
+        }
