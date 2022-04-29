@@ -1,5 +1,5 @@
 # system-monitor-client
-This is GUI client for flask_system_monitor
+This is GUI client for flask_system_monitor - https://github.com/Woodsst/flask-system-monitor
 This is test client
 ### First login = registration
 
