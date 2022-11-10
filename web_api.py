@@ -9,6 +9,7 @@ import requests
 import websocket
 from requests import Response
 
+from config.settings import Settings
 from monitoring_utilities.cpu_monitor import cpu_load
 from monitoring_utilities.datatype import DataType
 from monitoring_utilities.memory_monitor import memory_info
@@ -38,8 +39,8 @@ class DataCollector(ABC):
 
 
 class ThreadStatus(enum.Enum):
-    THREAD_ON = 'THREAD ON'
-    THREAD_OFF = 'THREAD OFF'
+    THREAD_ON = "THREAD ON"
+    THREAD_OFF = "THREAD OFF"
 
 
 class BaseHttpApi:
@@ -74,7 +75,7 @@ class WebSocketApi:
         self.host = host
         self.port = port
         self.path = path
-        self.url = f'ws://{self.host}:{self.port}{self.path}'
+        self.url = f"ws://{self.host}:{self.port}{self.path}"
         self.ws = websocket.WebSocket()
         self.ws.connect(self.url)
 
@@ -89,10 +90,17 @@ class WebSocketApi:
 
 
 class DataThreadHttp(BaseHttpApi, DataCollector):
-
-    def __init__(self, data_type: DataType, interval: int, client_id: str, username: str, mem: bool = None,
-                 cpu: bool = None, storage: bool = None):
-        super().__init__(host='localhost', port=5000)
+    def __init__(
+        self,
+        data_type: DataType,
+        interval: int,
+        client_id: str,
+        username: str,
+        mem: bool = None,
+        cpu: bool = None,
+        storage: bool = None,
+    ):
+        super().__init__(host=Settings.host, port=Settings.port)
         self.thread_status = ThreadStatus.THREAD_OFF
         self.data_type = data_type
         self.interval = interval
@@ -110,13 +118,14 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
                 "time": int(time.time()),
             }
             if self.cpu:
-                data['cpu_load'] = cpu_load(0)
+                data["cpu_load"] = cpu_load(0)
             if self.mem:
-                data['mem'] = memory_info(self.data_type)['used']
+                data["mem"] = memory_info(self.data_type)["used"]
             if self.storage:
-                data['storage'] = storage_info(self.data_type)['used']
-            response = self.post(f'/client/{self.username}', data=data,
-                                 headers=self.header())
+                data["storage"] = storage_info(self.data_type)["used"]
+            response = self.post(
+                f"/client/{self.username}", data=data, headers=self.header()
+            )
             logging.info(response.text)
             time.sleep(self.interval)
             if response.status_code != 202:
@@ -125,7 +134,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
 
     def stop(self):
         self.thread_status = ThreadStatus.THREAD_OFF
-        logging.info('Thread off')
+        logging.info("Thread off")
 
     def start(self):
         self.thread_status = ThreadStatus.THREAD_ON
@@ -133,24 +142,34 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         cpu_thread.start()
 
     def time_work_write_log(self):
-        response = self.post(f'/client/{self.username}/time', headers=self.header())
+        response = self.post(
+            f"/client/{self.username}/time", headers=self.header()
+        )
         return response.json()
 
     def log_slice(self, start: int, end: int):
-        response = self.post(f'/client/{self.username}/time/report?start={start}&end={end}', headers=self.header())
+        response = self.post(
+            f"/client/{self.username}/time/report?start={start}&end={end}",
+            headers=self.header(),
+        )
         return response.json()
 
     def header(self):
-        return {
-            'Authorization': self.client_id
-        }
+        return {"Authorization": self.client_id}
 
 
 class DataThreadWebSocket(WebSocketApi, DataCollector):
-
-    def __init__(self, data_type: DataType, interval: int, client_id, username: str, cpu: bool = None, mem: bool = None,
-                 storage: bool = None):
-        super().__init__(host='localhost', port=5000, path="/echo")
+    def __init__(
+        self,
+        data_type: DataType,
+        interval: int,
+        client_id,
+        username: str,
+        cpu: bool = None,
+        mem: bool = None,
+        storage: bool = None,
+    ):
+        super().__init__(host="localhost", port=5000, path="/echo")
         self.thread_status = ThreadStatus.THREAD_OFF
         self.data_type = data_type
         self.client_id = client_id
@@ -169,18 +188,26 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
             self.ws.recv()
             data_container = {"time": int(time.time())}
             if self.cpu:
-                data_container['cpu_load'] = cpu_load(0)
+                data_container["cpu_load"] = cpu_load(0)
             if self.mem:
-                data_container['mem'] = memory_info(self.data_type)['used']
+                data_container["mem"] = memory_info(self.data_type)["used"]
             if self.storage:
-                data_container['storage'] = storage_info(self.data_type)['used']
+                data_container["storage"] = storage_info(self.data_type)[
+                    "used"
+                ]
             elif len(data_container) == 0:
                 self.thread_status = ThreadStatus.THREAD_OFF
-            self.ws.send(json.dumps({"type": "CLIENT_DATA",
-                                     "data": data_container,
-                                     "interval": self.interval,
-                                     "client_id": self.client_id
-                                     }, indent=4))
+            self.ws.send(
+                json.dumps(
+                    {
+                        "type": "CLIENT_DATA",
+                        "data": data_container,
+                        "interval": self.interval,
+                        "client_id": self.client_id,
+                    },
+                    indent=4,
+                )
+            )
             time.sleep(self.interval)
             logging.info(self.ws.recv())
 
@@ -193,15 +220,17 @@ class DataThreadWebSocket(WebSocketApi, DataCollector):
         cpu_thread.start()
 
     def time_work_write_log(self):
-        response = self.http_request.post(f'/client/{self.username}/time', headers=self.header())
+        response = self.http_request.post(
+            f"/client/{self.username}/time", headers=self.header()
+        )
         return response.json()
 
     def log_slice(self, start: int, end: int):
-        response = self.http_request.post(f'/client/{self.username}/time/report?start={start}&end={end}',
-                                          headers=self.header())
+        response = self.http_request.post(
+            f"/client/{self.username}/time/report?start={start}&end={end}",
+            headers=self.header(),
+        )
         return response.json()
 
     def header(self):
-        return {
-            'Authorization': self.client_id
-        }
+        return {"Authorization": self.client_id}

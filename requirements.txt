@@ -3,3 +3,6 @@ websocket-client==1.2.3
 future~=0.18.2
 requests~=2.25.1
 psutil~=5.9.0
+pydantic==1.10.2
+flake8==5.0.4
+black==22.10.0

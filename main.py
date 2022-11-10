@@ -1,10 +1,10 @@
 import logging
 
 from gui import Login
-from log_config import logger_config
+from config.log_config import logger_config
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logger_config()
-    logging.info('client start')
+    logging.info("client start")
     login = Login()
     login.run()
