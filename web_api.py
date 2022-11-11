@@ -9,7 +9,7 @@ import requests
 import websocket
 from requests import Response
 
-from config.settings import Settings
+from config.settings import settings
 from monitoring_utilities.cpu_monitor import cpu_load
 from monitoring_utilities.datatype import DataType
 from monitoring_utilities.memory_monitor import memory_info
@@ -100,7 +100,7 @@ class DataThreadHttp(BaseHttpApi, DataCollector):
         cpu: bool = None,
         storage: bool = None,
     ):
-        super().__init__(host=Settings.host, port=Settings.port)
+        super().__init__(host=settings.host, port=settings.port)
         self.thread_status = ThreadStatus.THREAD_OFF
         self.data_type = data_type
         self.interval = interval

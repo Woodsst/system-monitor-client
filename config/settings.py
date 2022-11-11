@@ -6,4 +6,4 @@ class Settings(BaseSettings):
     port: int = Field(5000)
 
 
-settings = Settings
+settings = Settings()
